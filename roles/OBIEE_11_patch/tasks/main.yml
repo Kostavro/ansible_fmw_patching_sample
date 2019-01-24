@@ -1,0 +1,56 @@
+# Ansible task that applies a patch to OBIEE 11
+  
+  # Upload the patch files
+- name: Upload the patch zip file
+  copy:
+    src: "{{item}}"
+    dest: "{{software_directory}}"
+    owner: "{{ansible_user}}"
+    mode: 0644
+    force: no
+  when: has_OBIEE11 == "yes"
+  with_items: "{{patch_zip}}"
+
+  # Unzip the zip files
+- name: Unzip the new patch
+  shell: "yes | unzip {{software_directory}}/{{item}}"
+  args:
+    chdir: "{{software_directory}}"
+  when: has_OBIEE11 == "yes"
+  with_items: "{{patch_zip}}"
+  
+  # Shutdown opmn because a patch may require it
+- name: Shutdown the opmnctl instance
+  shell: "opmnctl shutdown"
+
+  # Apply the patches
+- name: Apply the new patches
+  shell: "export ORACLE_HOME={{OBIEE11_home}} ; yes | {{OBIEE11_home}}/OPatch/opatch apply"
+  args:
+    chdir: "{{software_directory}}/{{item}}"
+  with_items: "{{patch_to_apply}}"
+  register: patching_output
+  when: has_OBIEE11 == "yes"
+- debug:
+    msg: "{{item.stdout}}"
+  with_items: "{{patching_output.results}}"
+  
+  # Start opmn  
+- name: Start the opmnctl instance
+  shell: "opmnctl startall"
+
+  # Confirm that the patches have been installed
+- name: Get the latest applied patches
+  shell: "export ORACLE_HOME={{OBIEE11_home}} ; {{OBIEE11_home}}/OPatch/opatch lsinventory | grep 'Patch  ' | awk '{print $2}'"
+  when: has_OBIEE11 == "yes"
+  register: last_applied_patch
+  changed_when: False
+    
+  # Delete the extracted directories, but keep the zips
+- name: Delete the uznipped patch directory
+  shell: "rm -rf {{software_directory}}/{{item}}"
+  args:
+    chdir: "{{software_directory}}"
+  with_items: "{{patch_to_apply}}"  
+  when: has_OBIEE11 == "yes"
+  

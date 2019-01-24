@@ -1,0 +1,7 @@
+---
+- name: ohs_12.2.1.3.0_patch
+  hosts: all
+  serial: 1
+
+  roles:
+    - { role: OHS_12.2.1.3.0_patch, when: has_OHS122130 == "yes" }

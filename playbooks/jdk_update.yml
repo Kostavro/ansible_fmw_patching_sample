@@ -1,0 +1,7 @@
+---
+- name: jdk_update
+  hosts: all
+  serial: 1
+
+  roles:
+    - { role: jdk_update, when: has_jdk8 == "yes" }

@@ -1,0 +1,2 @@
+---
+vault_ansible_ssh_pass: "REPLACE_with_ssh_user_password"

@@ -1,0 +1,58 @@
+# Ansible playbook that updates a jdk (tested and used for jdk8)
+
+  # Get existing JDK version to check against the version that we want to install
+- name: Get existing JDK version
+  shell: "{{item}}/bin/java -version 2>&1 | grep 'Java(TM)' | awk '{print $6}' | cut -d'-' -f1 | sed 's|[^0-9]||g'"
+  with_items: "{{jdk8_directory}}"
+  register: existing_jdk_version
+  when: has_jdk8 == "yes"
+  changed_when: False 
+- debug: 
+    msg: "JDK version: {{item.stdout}}"
+  with_items: "{{existing_jdk_version.results}}"
+ 
+  # Check the existing version against the version that we want to install
+- name: Check if JDK version is older than the one we want to install
+  set_fact: install_new_java=True
+  when: "{{item.stdout}} < jdk_version_to_install"
+  with_items: "{{existing_jdk_version.results}}"
+- debug: 
+    msg: "JDK version to install: {{jdk_version_to_install}}"
+  when: "item.stdout < jdk_version_to_install"
+  with_items: "{{existing_jdk_version.results}}"
+
+  # Upload the new jdk
+- name: Upload the new jdk
+  copy:
+    src: "{{jdk_zip}}"
+    dest: "{{software_directory}}"
+    owner: "{{ansible_user}}"
+    mode: 0644
+    force: no
+  when: has_jdk8 == "yes"
+   
+  # Do the thing (rename the existing jdk dir and give its name to the new one)
+- name: Extract the jdk archive and install it
+  shell: "tar -xzvf {{software_directory}}/{{jdk_zip}} -C {{jdk8_parent_directory}} ; rm -rf {{item}}.old ; mv {{item}} {{item}}.old ; cp -r {{jdk8_parent_directory}}/{{jdk_unzipped}} {{item}}"
+  with_items: "{{jdk8_directory}}"
+  when: install_new_java
+- debug:
+    msg: "New Java has been installed"
+
+  # Delete the unzipped archive
+- name: Delete the unzipped jdk8 directory
+  shell: "rm -rf {{jdk8_parent_directory}}/{{jdk_unzipped}}"
+  when: install_new_java
+- debug:
+    msg: "The unzipped jdk archive directory has been removed"
+    
+  # Get existing jdk version (hoping that it has been updated)
+- name: Get updated JDK version
+  shell: "{{item}}/bin/java -version 2>&1 | grep 'Java(TM)' | awk '{print $6}' | cut -d'-' -f1 | sed 's|[^0-9]||g'"
+  with_items: "{{jdk8_directory}}"
+  register: existing_jdk_version
+  when: has_jdk8 == "yes"
+  changed_when: False 
+- debug: 
+    msg: "JDK version: {{item.stdout}}"
+  with_items: "{{existing_jdk_version.results}}"

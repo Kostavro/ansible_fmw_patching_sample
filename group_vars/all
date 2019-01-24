@@ -1,0 +1,16 @@
+---
+##############################
+### Variables for Patching ###   
+###  changed by host_vars  ### 
+##############################
+
+has_jrockit6: "no"
+has_jdk8: "no"
+has_WLS10360: "no"
+has_WLS122130: "no"
+has_OBIEE11: "no"
+has_SOA122130: "no"
+has_OSB122130: "no"
+has_WCC122130: "no"
+has_OAM122130: "no"
+has_OHS122130: "no"

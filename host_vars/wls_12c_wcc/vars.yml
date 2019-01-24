@@ -1,0 +1,19 @@
+---
+ansible_host: 192.168.1.16
+ansible_user: oracle
+ansible_ssh_pass: "{{vault_ansible_ssh_pass}}"
+
+software_directory: "/u01/app/oracle/software"
+
+has_jdk8: "yes"
+jdk8_parent_directory: "/u01/app/oracle/product/jdk"
+jdk8_directory: 
+ - ['/u01/app/oracle/product/jdk/wcc']
+
+has_WLS122130: "yes"
+WLS122130_home: 
+ - ['/u01/app/oracle/product/fmw/wcc']
+
+has_WCC122130: "yes"
+WCC122130_home: 
+ - ['/u01/app/oracle/product/fmw/wcc']

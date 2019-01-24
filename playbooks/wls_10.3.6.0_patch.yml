@@ -1,0 +1,7 @@
+---
+- name: wls_10.3.6.0_patch
+  hosts: all
+  serial: 1
+
+  roles:
+    - { role: WLS_10.3.6.0_patch, when: has_WLS10360 == "yes"}

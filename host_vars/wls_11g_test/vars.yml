@@ -1,0 +1,15 @@
+---
+ansible_host: 192.168.1.2
+ansible_user: oracle
+ansible_ssh_pass: "{{vault_ansible_ssh_pass}}"
+
+software_directory: "/u01/app/oracle/software"
+
+has_jrockit6: "yes"
+jrockit6_parent_directory: "/u01/app/oracle/product/jdk"
+jrockit6_directory:
+ - ['/u01/app/oracle/product/jdk/test']
+
+has_WLS10360: "yes"
+WLS10360_home: 
+ - ['/u01/app/oracle/product/fmw/test']

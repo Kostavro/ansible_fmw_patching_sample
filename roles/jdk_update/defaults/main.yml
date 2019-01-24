@@ -1,0 +1,3 @@
+jdk_zip: "jdk-8u192-linux-x64.tar.gz"
+jdk_unzipped: "jdk1.8.0_192"
+jdk_version_to_install: "180192"

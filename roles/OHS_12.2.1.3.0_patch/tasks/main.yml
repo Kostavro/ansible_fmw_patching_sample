@@ -1,0 +1,54 @@
+# Ansible task that applies a patch to OHS 12.2.1.3.0
+
+  # Confirm that we should upload the new patch
+- name: Get the latest applied patches
+  shell: "export ORACLE_HOME={{OHS122130_home}} ; {{OHS122130_home}}/OPatch/opatch lsinventory | grep 'Patch  ' | awk '{print $2}' | head -n 1"
+  when: has_OHS122130 == "yes"
+  register: last_applied_patch
+  changed_when: False
+- debug: 
+    msg: "Latest applied patch is {{last_applied_patch.stdout}}"
+    
+  # Upload the patch file
+- name: Upload the patch zip file
+  copy:
+    src: "{{patch_zip}}"
+    dest: "{{software_directory}}"
+    owner: "{{ansible_user}}"
+    mode: 0644
+    force: no
+  when: has_OHS122130 == "yes" and last_applied_patch.stdout != patch_to_apply
+
+  # Usually, you should shutdown the ohs instance before patching it (this is a custom script)
+- name: Shutdown the ohs instance
+  shell: "~/config/startup/menu_ohs shutdown"
+  when: last_applied_patch.stdout != patch_to_apply
+
+- name: Unzip the new patch
+  shell: "unzip {{software_directory}}/{{patch_zip}}"
+  args:
+    chdir: "{{software_directory}}"
+  when: last_applied_patch.stdout != patch_to_apply
+
+- name: Apply the new patch
+  shell: "export ORACLE_HOME={{OHS122130_home}} ; yes | {{OHS122130_home}}/OPatch/opatch apply"
+  args:
+    chdir: "{{software_directory}}/{{patch_to_apply}}"
+  register: patching_output
+  when: last_applied_patch.stdout != patch_to_apply
+- debug:
+    msg: "{{patching_output.stdout_lines}}"
+
+  # Start the instance
+- name: Start the ohs instance
+  shell: "~/config/startup/menu_ohs start"
+  when: last_applied_patch.stdout != patch_to_apply
+    
+  # Confirm that we installed the new patch
+- name: Get the latest applied patch
+  shell: "export ORACLE_HOME={{OHS122130_home}} ; {{OHS122130_home}}/OPatch/opatch lsinventory | grep 'Patch  ' | awk '{print $2}' | head -n 1"
+  when: has_OHS122130 == "yes"
+  register: last_applied_patch
+  changed_when: False
+- debug: 
+    msg: "New latest applied patch is {{last_applied_patch.stdout}}"    

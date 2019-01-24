@@ -1,0 +1,4 @@
+---
+# Variables
+patch_to_apply: "27918773"
+patch_zip: "p27918773_122130_Generic.zip"

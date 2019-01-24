@@ -1,0 +1,4 @@
+---
+# Variables
+patch_to_apply: GENM
+patch_zip: "p28343311_1036_Generic.zip"

@@ -1,0 +1,7 @@
+---
+- name: obiee_11_patch
+  hosts: all
+  serial: 1
+
+  roles:
+    - { role: OBIEE_11_patch, when: has_OBIEE11 == "yes" }

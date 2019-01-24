@@ -1,0 +1,4 @@
+---
+# Variables
+patch_to_apply: "27198002"
+patch_zip: "p27198002_122130_Linux-x86-64.zip"

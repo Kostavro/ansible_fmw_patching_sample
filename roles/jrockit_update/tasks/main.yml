@@ -1,0 +1,53 @@
+# Ansible task that updates a jrockit jdk
+
+  # Get the existing jdk version to check against the one we want to install
+- name: Get existing JDK version
+  shell: "{{item}}/bin/java -version 2>&1 | grep JRockit | awk '{print $4}'| cut -d'-' -f-4 | cut -d'-' -f4- | sed 's|[^0-9]||g'"
+  with_items: "{{jrockit6_directory}}"
+  register: existing_jdk_version
+  when: has_jrockit6 == "yes"
+  changed_when: False 
+- debug: 
+    msg: "JDK version: {{item.stdout}}"
+  with_items: "{{existing_jdk_version.results}}"
+  
+- name: Check if JDK version is older than the one we want to install
+  set_fact: install_new_java=True
+  when: "item.stdout < jdk_version_to_install"
+  with_items: "{{existing_jdk_version.results}}"
+- debug: 
+    msg: "JDK version to install: {{jdk_version_to_install}}"
+  when: "item.stdout < jdk_version_to_install"
+  with_items: "{{existing_jdk_version.results}}"
+  
+  # Upload the new jrockit zip
+- name: Upload the new jrockit zip
+  copy:
+    src: "{{jdk_zip}}"
+    dest: "{{software_directory}}"
+    owner: "{{ansible_user}}"
+    mode: 0644
+    force: no
+  when: "item.stdout < jdk_version_to_install"
+  with_items: "{{existing_jdk_version.results}}"
+  
+  # Do the thing
+- name: Extract the jdk archive and install it
+  shell: "unzip {{software_directory}}/{{jdk_zip}} -d {{jrockit6_parent_directory}} ; rm -rf {{item.0}}.old ; mv {{item.0}} {{item.0}}.old ; cp -r {{jrockit6_parent_directory}}/{{jdk_unzipped}} {{item.0}}"
+  when: 'has_jrockit6 == "yes" and item.1.stdout < jdk_version_to_install'
+  with_together: 
+    - "{{jrockit6_directory}}"
+    - "{{existing_jdk_version.results}}"
+- debug:
+    msg: "New Java has been installed"
+    
+  # Get the jdk version hoping that it has changed
+- name: Get the updated JDK version
+  shell: "{{item}}/bin/java -version 2>&1 | grep JRockit | awk '{print $4}'| cut -d'-' -f-4 | cut -d'-' -f4- | sed 's|[^0-9]||g'"
+  with_items: "{{jrockit6_directory}}"
+  register: new_jdk_version
+  when: has_jrockit6 == "yes"
+  changed_when: False 
+- debug: 
+    msg: "JDK version: {{item.stdout}}"
+  with_items: "{{new_jdk_version.results}}"

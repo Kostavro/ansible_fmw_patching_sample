@@ -1,0 +1,13 @@
+[local]
+localhost ansible_connection=local
+
+[Weblogic11g]
+wls_11g_test
+wls_11g_obiee_dev1
+
+[Weblogic12c]
+wls_12c_test
+wls_12c_ohs
+wls_12c_oam
+wls_12c_soa_dev1
+wls_12c_wcc

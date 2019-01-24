@@ -1,0 +1,48 @@
+# Ansible task that applies a patch to WLS 12.2.1.3.0
+
+  # Upload the patch
+- name: Upload the patch_to_apply
+  copy: 
+    src: "{{patch_zip}}"
+    dest: "{{software_directory}}"
+    owner: "{{ansible_user}}"
+    mode: 0644
+    force: no
+  when: has_WLS122130 == "yes" and upload_WLS122130_patch =="yes"
+  
+  # Unzip and apply the patch
+- name: Unzip the new patch
+  shell: "yes | unzip {{software_directory}}/{{patch_zip}}"
+  args:
+    chdir: "{{software_directory}}"
+  when: has_WLS122130 == "yes"
+  
+- name: Apply the new patch
+  shell: "export ORACLE_HOME={{item}} ; yes | {{item}}/OPatch/opatch apply"
+  with_items: "{{WLS122130_home}}"
+  args:
+    chdir: "{{software_directory}}/{{patch_to_apply}}"
+  register: patching_output
+  when: has_WLS122130 == "yes"
+- debug:
+    msg: "{{item.stdout}}"
+  with_items: "{{patching_output.results}}"
+    
+  # Confirm that the patch has been installed
+- name: Get the latest applied patches
+  shell: "export ORACLE_HOME={{item}} ; {{item}}/OPatch/opatch lsinventory | grep 'Patch  ' | awk '{print $2}'"
+  with_items: "{{WLS122130_home}}"
+  when: has_WLS122130 == "yes"
+  register: last_applied_patch
+  changed_when: False
+- debug: 
+    msg: "New latest applied patch is {{item.stdout}}"
+  with_items: "{{last_applied_patch.results}}"
+    
+  # Delete the extracted directory, but keep the zip
+- name: Delete the uznipped patch directory
+  shell: "rm -rf {{software_directory}}/{{patch_to_apply}}"
+  args:
+    chdir: "{{software_directory}}"
+  when: has_WLS122130 == "yes"
+  

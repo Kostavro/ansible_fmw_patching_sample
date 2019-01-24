@@ -1,0 +1,52 @@
+# Ansible task that applies a patch to WLS 10.3.6.0
+
+  # Confirm that we should apply the patch
+- name: Get the latest applied patch
+  shell: "export ORACLE_HOME={{item}} ; {{item}}/utils/bsu/bsu.sh -view -status=applied -prod_dir={{item}}/wlserver_10.3 -patch_download_dir={{item}}/utils/bsu/cache_dir | grep 'Patch ID:' | awk '{print $3}'"
+  when: has_WLS10360 == "yes"
+  args:
+    chdir: "{{item}}/utils/bsu/"
+  with_items: "{{WLS10360_home}}"
+  register: last_applied_patch
+  changed_when: False
+- debug: 
+    msg: "Latest applied patch is {{item.stdout}}"
+  with_items: "{{last_applied_patch.results}}"
+  
+  # Upload the new patch
+- name: Upload the new patch zip
+  copy: 
+    src: "{{patch_zip}}"
+    dest: "{{software_directory}}"
+    owner: "{{ansible_user}}"
+    group: "{{ansible_user_group}}"
+    mode: 0644
+    force: no
+  when: has_WLS10360 == "yes" and item.stdout != patch_to_apply
+  with_items: "{{last_applied_patch.results}}"
+  
+  # Unzip the patch file
+- name: Unzip the new patch
+  shell: "yes | unzip {{software_directory}}/{{patch_zip}} -d {{item.0}}/utils/bsu/cache_dir/"
+  when: has_WLS10360 == "yes" and item.1.stdout != patch_to_apply
+  with_together: 
+    - "{{WLS10360_home}}"
+    - "{{last_applied_patch.results}}"
+
+  # Apply the patch
+- name: Apply the new patch
+  shell: "export ORACLE_HOME={{item.0}} ; {{item.0}}/utils/bsu/bsu.sh -remove -patchlist={{item.1.stdout}} -prod_dir={{item.0}}/wlserver_10.3;{{item.0}}/utils/bsu/bsu.sh -install -patch_download_dir={{item.0}}/utils/bsu/cache_dir -patchlist={{patch_to_apply}} -prod_dir={{item.0}}/wlserver_10.3"
+  args:
+    chdir: "{{item.0}}/utils/bsu/"
+  with_together:
+    - "{{WLS10360_home}}"
+    - "{{last_applied_patch.results}}"
+  register: patching_output
+  when: upload_WLS10360_patch == "yes" and has_WLS10360 == "yes" and item.1.stdout != patch_to_apply
+- debug:
+    msg: "{{item.0.stdout}}"
+  when: upload_WLS10360_patch == "yes" and has_WLS10360 == "yes" and item.1.stdout != patch_to_apply
+  with_together: 
+    - "{{patching_output.results}}"
+    - "{{last_applied_patch.results}}"
+  

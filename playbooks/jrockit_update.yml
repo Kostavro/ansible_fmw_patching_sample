@@ -1,0 +1,7 @@
+---
+- name: jrockit_update
+  hosts: all
+  serial: 1
+
+  roles:
+    - { role: jrockit_update, when: has_jrockit6 == "yes" }

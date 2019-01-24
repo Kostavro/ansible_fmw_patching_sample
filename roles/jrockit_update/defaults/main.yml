@@ -1,0 +1,5 @@
+---
+# Variables
+jdk_zip: "jrockit-jdk1.6.0_211-linux_x86_64.zip"
+jdk_unzipped: "jrockit-jdk1.6.0_211"
+jdk_version_to_install: "160211"
