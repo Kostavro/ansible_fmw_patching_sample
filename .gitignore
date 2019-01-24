@@ -1,5 +1,2 @@
-*.zip
-*.gz
-*.tar.gz
 vaultkey
 ansible.cfg
